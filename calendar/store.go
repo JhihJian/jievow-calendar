@@ -48,6 +48,10 @@ func (s *Store) Version() string {
 	return s.version
 }
 
+func (s *Store) Len() int {
+	return len(s.records)
+}
+
 func verifyChecksum(dataPath, checksumPath string) error {
 	data, err := os.ReadFile(dataPath)
 	if err != nil {
