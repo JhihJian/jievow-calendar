@@ -1,0 +1,56 @@
+[
+  {
+    "date": "2025-01-29",
+    "lunar_year": 2025,
+    "lunar_month": 1,
+    "lunar_day": 1,
+    "is_leap_month": false,
+    "year_ganzhi": "乙巳",
+    "solar_term": ""
+  },
+  {
+    "date": "2025-02-03",
+    "lunar_year": 2025,
+    "lunar_month": 1,
+    "lunar_day": 6,
+    "is_leap_month": false,
+    "solar_term": "立春"
+  },
+  {
+    "date": "2025-05-31",
+    "lunar_year": 2025,
+    "lunar_month": 5,
+    "lunar_day": 5,
+    "is_leap_month": false,
+    "solar_term": ""
+  },
+  {
+    "date": "2025-10-06",
+    "lunar_year": 2025,
+    "lunar_month": 8,
+    "lunar_day": 15,
+    "is_leap_month": false,
+    "solar_term": ""
+  },
+  {
+    "date": "2026-01-20",
+    "solar_term": "大寒"
+  },
+  {
+    "date": "2026-02-17",
+    "lunar_year": 2026,
+    "lunar_month": 1,
+    "lunar_day": 1,
+    "is_leap_month": false,
+    "year_ganzhi": "丙午",
+    "solar_term": ""
+  },
+  {
+    "date": "2026-04-20",
+    "solar_term": "谷雨"
+  },
+  {
+    "date": "2027-01-05",
+    "solar_term": "小寒"
+  }
+]
