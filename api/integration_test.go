@@ -65,8 +65,15 @@ func TestIntegrationNoSolarTerm(t *testing.T) {
 	var body map[string]any
 	json.NewDecoder(resp.Body).Decode(&body)
 
-	if body["solar_term"] != nil {
-		t.Errorf("solar_term should be null, got %v", body["solar_term"])
+	st, ok := body["solar_term"].(map[string]any)
+	if !ok {
+		t.Fatal("solar_term should be an object with active term info")
+	}
+	if st["name"] != "谷雨" {
+		t.Errorf("solar_term.name want 谷雨 got %v", st["name"])
+	}
+	if st["is_term_day"] != false {
+		t.Errorf("solar_term.is_term_day want false got %v", st["is_term_day"])
 	}
 }
 

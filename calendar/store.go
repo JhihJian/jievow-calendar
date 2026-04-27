@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
+	"time"
 )
 
 type Store struct {
@@ -50,6 +53,53 @@ func (s *Store) Version() string {
 
 func (s *Store) Len() int {
 	return len(s.records)
+}
+
+func NewStore(version string, records []CalendarRecord) *Store {
+	m := make(map[string]CalendarRecord, len(records))
+	for _, r := range records {
+		m[r.Date] = r
+	}
+	return &Store{version: version, records: m}
+}
+
+func (s *Store) QueryRange(from, to string) ([]CalendarRecord, error) {
+	fromDate, err := time.Parse("2006-01-02", from)
+	if err != nil {
+		return nil, fmt.Errorf("invalid from date: %w", err)
+	}
+	toDate, err := time.Parse("2006-01-02", to)
+	if err != nil {
+		return nil, fmt.Errorf("invalid to date: %w", err)
+	}
+	if fromDate.After(toDate) {
+		return nil, fmt.Errorf("from must be <= to")
+	}
+	days := int(toDate.Sub(fromDate).Hours()/24) + 1
+	if days > 366 {
+		return nil, fmt.Errorf("range exceeds 366 days")
+	}
+	var result []CalendarRecord
+	for d := fromDate; !d.After(toDate); d = d.AddDate(0, 0, 1) {
+		if rec, ok := s.records[d.Format("2006-01-02")]; ok {
+			result = append(result, rec)
+		}
+	}
+	return result, nil
+}
+
+func (s *Store) SolarTermsByYear(year int) []CalendarRecord {
+	prefix := fmt.Sprintf("%d-", year)
+	var result []CalendarRecord
+	for date, rec := range s.records {
+		if rec.SolarTerm != "" && strings.HasPrefix(date, prefix) {
+			result = append(result, rec)
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Date < result[j].Date
+	})
+	return result
 }
 
 func verifyChecksum(dataPath, checksumPath string) error {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"jievow-calendar/calendar"
@@ -18,9 +19,10 @@ func main() {
 
 	var records []calendar.CalendarRecord
 	for d := start; !d.After(end); d = d.AddDate(0, 0, 1) {
-		rec := generateRecord(d)
-		records = append(records, rec)
+		records = append(records, generateRecord(d))
 	}
+
+	computeActiveTerms(records)
 
 	dataFile := calendar.DataFile{
 		Version: "2025a",
@@ -37,22 +39,61 @@ func generateRecord(d time.Time) calendar.CalendarRecord {
 	solar := lunarcal.NewSolar(year, int(month), day, 0, 0, 0)
 	lunar := solar.GetLunar()
 
+	lunarMonth := lunar.GetMonth()
+	isLeap := lunarMonth < 0
+	lunarDay := lunar.GetDay()
+	yearGanzhi := lunar.GetYearInGanZhi()
+
 	term := ""
-	jq := lunar.GetJieQi()
-	if jq != "" {
+	if jq := lunar.GetJieQi(); jq != "" {
 		term = jq
 	}
 
 	return calendar.CalendarRecord{
 		Date:        d.Format("2006-01-02"),
 		LunarYear:   lunar.GetYear(),
-		LunarMonth:  lunar.GetMonth(),
-		LunarDay:    lunar.GetDay(),
-		IsLeapMonth: lunar.GetMonth() < 0,
-		YearGanzhi:  lunar.GetYearInGanZhi(),
+		LunarMonth:  lunarMonth,
+		LunarDay:    lunarDay,
+		IsLeapMonth: isLeap,
+		YearGanzhi:  yearGanzhi,
 		MonthGanzhi: lunar.GetMonthInGanZhi(),
 		DayGanzhi:   lunar.GetDayInGanZhi(),
 		SolarTerm:   term,
+
+		MonthDisplay: calendar.LunarMonthDisplay(lunarMonth, isLeap),
+		DayDisplay:   calendar.LunarDayDisplay(lunarDay),
+		Display:      calendar.LunarDisplay(lunarMonth, lunarDay, isLeap),
+		YearDisplay:  calendar.LunarYearDisplay(yearGanzhi, lunarMonth, lunarDay, isLeap),
+	}
+}
+
+func computeActiveTerms(records []calendar.CalendarRecord) {
+	type termInfo struct {
+		date time.Time
+		name string
+	}
+	var terms []termInfo
+	for _, r := range records {
+		if r.SolarTerm != "" {
+			t, _ := time.Parse("2006-01-02", r.Date)
+			terms = append(terms, termInfo{t, r.SolarTerm})
+		}
+	}
+
+	for i := range records {
+		recDate, _ := time.Parse("2006-01-02", records[i].Date)
+
+		idx := sort.Search(len(terms), func(j int) bool {
+			return terms[j].date.After(recDate)
+		})
+
+		if idx > 0 {
+			term := terms[idx-1]
+			records[i].ActiveTerm = term.name
+			records[i].IsTermDay = records[i].SolarTerm != ""
+			records[i].TermStartDate = term.date.Format("2006-01-02")
+			records[i].DayInTerm = int(recDate.Sub(term.date).Hours()/24) + 1
+		}
 	}
 }
 
