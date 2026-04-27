@@ -73,12 +73,21 @@ func buildResponse(rec calendar.CalendarRecord, fields map[string]bool, version 
 			"year_ganzhi":   rec.YearGanzhi,
 			"month_ganzhi":  rec.MonthGanzhi,
 			"day_ganzhi":    rec.DayGanzhi,
+			"month_display": rec.MonthDisplay,
+			"day_display":   rec.DayDisplay,
+			"display":       rec.Display,
+			"year_display":  rec.YearDisplay,
 		}
 	}
 
 	if fields[calendar.FieldSolarTerm] {
-		if rec.SolarTerm != "" {
-			resp["solar_term"] = map[string]any{"name": rec.SolarTerm}
+		if rec.ActiveTerm != "" {
+			resp["solar_term"] = map[string]any{
+				"name":        rec.ActiveTerm,
+				"is_term_day": rec.IsTermDay,
+				"start_date":  rec.TermStartDate,
+				"day_in_term": rec.DayInTerm,
+			}
 		} else {
 			resp["solar_term"] = nil
 		}

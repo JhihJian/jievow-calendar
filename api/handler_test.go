@@ -48,9 +48,15 @@ func TestHandlerBasicQuery(t *testing.T) {
 	if lunar["year_ganzhi"] == nil {
 		t.Error("missing lunar.year_ganzhi")
 	}
+	if lunar["display"] == nil {
+		t.Error("missing lunar.display")
+	}
 	st, ok := resp["solar_term"].(map[string]any)
 	if !ok || st["name"] != "谷雨" {
 		t.Errorf("solar_term.name want 谷雨 got %v", resp["solar_term"])
+	}
+	if st["is_term_day"] != true {
+		t.Errorf("solar_term.is_term_day want true got %v", st["is_term_day"])
 	}
 }
 
@@ -62,14 +68,24 @@ func TestHandlerNonSolarTermDay(t *testing.T) {
 	h.ServeHTTP(w, r)
 
 	if w.Code != http.StatusOK {
-		t.Fatalf("status want 200 got %d", w.Code)
+		t.Fatalf("status want 200 got %d: %s", w.Code, w.Body.String())
 	}
 
 	var resp map[string]any
 	json.Unmarshal(w.Body.Bytes(), &resp)
 
-	if resp["solar_term"] != nil {
-		t.Errorf("solar_term should be null, got %v", resp["solar_term"])
+	st, ok := resp["solar_term"].(map[string]any)
+	if !ok {
+		t.Fatal("solar_term should be an object with active term info")
+	}
+	if st["name"] != "谷雨" {
+		t.Errorf("solar_term.name want 谷雨 got %v", st["name"])
+	}
+	if st["is_term_day"] != false {
+		t.Errorf("solar_term.is_term_day want false got %v", st["is_term_day"])
+	}
+	if st["day_in_term"] == nil {
+		t.Error("missing solar_term.day_in_term")
 	}
 }
 
