@@ -108,3 +108,59 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 		"message": message,
 	})
 }
+
+func (h *Handler) HandleRange(w http.ResponseWriter, r *http.Request) {
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+
+	if from == "" || to == "" {
+		writeError(w, http.StatusBadRequest, "invalid_params", "from and to 参数必填")
+		return
+	}
+
+	if _, err := time.Parse("2006-01-02", from); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		return
+	}
+	if _, err := time.Parse("2006-01-02", to); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_date", "日期格式应为 YYYY-MM-DD")
+		return
+	}
+
+	records, err := h.store.QueryRange(from, to)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid_range", err.Error())
+		return
+	}
+
+	fields := calendar.ParseFields(r.URL.Query().Get("fields"))
+	for _, f := range fields {
+		if !calendar.ValidFields[f] {
+			writeError(w, http.StatusBadRequest, "invalid_fields",
+				"合法值: basic, lunar, solar_term, supplement")
+			return
+		}
+	}
+
+	fieldSet := make(map[string]bool, len(fields))
+	for _, f := range fields {
+		fieldSet[f] = true
+	}
+
+	dates := make([]map[string]any, 0, len(records))
+	for _, rec := range records {
+		entry := buildResponse(rec, fieldSet, "")
+		delete(entry, "data_version")
+		dates = append(dates, entry)
+	}
+
+	resp := map[string]any{
+		"data_version": h.store.Version(),
+		"from":         from,
+		"to":           to,
+		"dates":        dates,
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(resp)
+}

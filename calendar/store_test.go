@@ -78,3 +78,41 @@ func TestStoreBadChecksum(t *testing.T) {
 		t.Fatal("expected checksum error")
 	}
 }
+
+func TestQueryRange(t *testing.T) {
+	records := []CalendarRecord{
+		{Date: "2026-04-01", SolarTerm: "", ActiveTerm: "春分", MonthDisplay: "三月"},
+		{Date: "2026-04-05", SolarTerm: "清明", ActiveTerm: "清明", MonthDisplay: "三月"},
+		{Date: "2026-04-20", SolarTerm: "谷雨", ActiveTerm: "谷雨", MonthDisplay: "三月"},
+		{Date: "2026-04-30", SolarTerm: "", ActiveTerm: "谷雨", MonthDisplay: "四月"},
+	}
+	s := NewStore("test", records)
+
+	result, err := s.QueryRange("2026-04-01", "2026-04-05")
+	if err != nil {
+		t.Fatalf("QueryRange returned error: %v", err)
+	}
+	if len(result) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(result))
+	}
+	if result[0].Date != "2026-04-01" {
+		t.Errorf("first result date = %q, want 2026-04-01", result[0].Date)
+	}
+	if result[1].Date != "2026-04-05" {
+		t.Errorf("second result date = %q, want 2026-04-05", result[1].Date)
+	}
+}
+
+func TestQueryRangeValidation(t *testing.T) {
+	s := NewStore("test", nil)
+
+	_, err := s.QueryRange("2026-04-05", "2026-04-01")
+	if err == nil {
+		t.Error("expected error for from > to")
+	}
+
+	_, err = s.QueryRange("2025-01-01", "2026-12-31")
+	if err == nil {
+		t.Error("expected error for range > 366 days")
+	}
+}

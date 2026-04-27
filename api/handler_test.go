@@ -145,3 +145,52 @@ func TestHandlerInvalidFields(t *testing.T) {
 		t.Fatalf("status want 400 got %d", w.Code)
 	}
 }
+
+func TestHandleRange(t *testing.T) {
+	records := []calendar.CalendarRecord{
+		{Date: "2026-04-01", LunarYear: 2026, LunarMonth: 3, LunarDay: 4, IsLeapMonth: false, YearGanzhi: "丙午", MonthGanzhi: "壬辰", DayGanzhi: "甲子", ActiveTerm: "春分", IsTermDay: false, TermStartDate: "2026-03-20", DayInTerm: 13, MonthDisplay: "三月", DayDisplay: "初四", Display: "三月初四", YearDisplay: "丙午年三月初四"},
+		{Date: "2026-04-05", LunarYear: 2026, LunarMonth: 3, LunarDay: 8, IsLeapMonth: false, YearGanzhi: "丙午", MonthGanzhi: "壬辰", DayGanzhi: "戊寅", SolarTerm: "清明", ActiveTerm: "清明", IsTermDay: true, TermStartDate: "2026-04-05", DayInTerm: 1, MonthDisplay: "三月", DayDisplay: "初八", Display: "三月初八", YearDisplay: "丙午年三月初八"},
+	}
+	store := calendar.NewStore("testv", records)
+	h := NewHandler(store)
+
+	req := httptest.NewRequest("GET", "/api/v1/range?from=2026-04-01&to=2026-04-05&fields=basic,lunar,solar_term", nil)
+	w := httptest.NewRecorder()
+	h.HandleRange(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]any
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp["from"] != "2026-04-01" {
+		t.Errorf("from = %v, want 2026-04-01", resp["from"])
+	}
+	dates := resp["dates"].([]any)
+	if len(dates) != 2 {
+		t.Fatalf("len(dates) = %d, want 2", len(dates))
+	}
+}
+
+func TestHandleRangeValidation(t *testing.T) {
+	store := calendar.NewStore("testv", nil)
+	h := NewHandler(store)
+
+	tests := []struct {
+		url  string
+		code int
+	}{
+		{"/api/v1/range?from=2026-04-01", http.StatusBadRequest},
+		{"/api/v1/range?from=2026-04-05&to=2026-04-01", http.StatusBadRequest},
+		{"/api/v1/range?from=bad&to=2026-04-05", http.StatusBadRequest},
+	}
+	for _, tt := range tests {
+		req := httptest.NewRequest("GET", tt.url, nil)
+		w := httptest.NewRecorder()
+		h.HandleRange(w, req)
+		if w.Code != tt.code {
+			t.Errorf("url=%s status=%d, want %d", tt.url, w.Code, tt.code)
+		}
+	}
+}
