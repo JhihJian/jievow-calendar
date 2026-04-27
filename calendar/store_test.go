@@ -116,3 +116,25 @@ func TestQueryRangeValidation(t *testing.T) {
 		t.Error("expected error for range > 366 days")
 	}
 }
+
+func TestSolarTermsByYear(t *testing.T) {
+	records := []CalendarRecord{
+		{Date: "2026-01-05", SolarTerm: "小寒", MonthDisplay: "冬月"},
+		{Date: "2026-01-20", SolarTerm: "大寒", MonthDisplay: "腊月"},
+		{Date: "2026-04-05", SolarTerm: "清明", MonthDisplay: "三月"},
+		{Date: "2026-04-10", SolarTerm: "", MonthDisplay: "三月"},
+		{Date: "2025-12-22", SolarTerm: "冬至", MonthDisplay: "冬月"},
+	}
+	s := NewStore("test", records)
+
+	result := s.SolarTermsByYear(2026)
+	if len(result) != 3 {
+		t.Fatalf("expected 3 terms, got %d", len(result))
+	}
+	if result[0].SolarTerm != "小寒" {
+		t.Errorf("first term = %q, want 小寒", result[0].SolarTerm)
+	}
+	if result[0].Date != "2026-01-05" {
+		t.Errorf("first term date = %q, want 2026-01-05", result[0].Date)
+	}
+}

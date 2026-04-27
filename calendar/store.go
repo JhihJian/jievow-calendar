@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -84,6 +86,20 @@ func (s *Store) QueryRange(from, to string) ([]CalendarRecord, error) {
 		}
 	}
 	return result, nil
+}
+
+func (s *Store) SolarTermsByYear(year int) []CalendarRecord {
+	prefix := fmt.Sprintf("%d-", year)
+	var result []CalendarRecord
+	for date, rec := range s.records {
+		if rec.SolarTerm != "" && strings.HasPrefix(date, prefix) {
+			result = append(result, rec)
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Date < result[j].Date
+	})
+	return result
 }
 
 func verifyChecksum(dataPath, checksumPath string) error {

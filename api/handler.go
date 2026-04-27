@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"jievow-calendar/calendar"
@@ -159,6 +160,44 @@ func (h *Handler) HandleRange(w http.ResponseWriter, r *http.Request) {
 		"from":         from,
 		"to":           to,
 		"dates":        dates,
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *Handler) HandleSolarTerms(w http.ResponseWriter, r *http.Request) {
+	yearStr := r.URL.Query().Get("year")
+	if yearStr == "" {
+		writeError(w, http.StatusBadRequest, "invalid_params", "year 参数必填")
+		return
+	}
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || year < 1 {
+		writeError(w, http.StatusBadRequest, "invalid_year", "year 应为有效年份")
+		return
+	}
+
+	records := h.store.SolarTermsByYear(year)
+	if len(records) == 0 {
+		writeError(w, http.StatusNotFound, "year_out_of_range",
+			"支持的年份范围: 2025 至 2027")
+		return
+	}
+
+	terms := make([]map[string]any, 0, len(records))
+	for _, rec := range records {
+		terms = append(terms, map[string]any{
+			"name":          rec.SolarTerm,
+			"date":          rec.Date,
+			"month_display": rec.MonthDisplay,
+		})
+	}
+
+	resp := map[string]any{
+		"data_version": h.store.Version(),
+		"year":         year,
+		"terms":        terms,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

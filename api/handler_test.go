@@ -194,3 +194,58 @@ func TestHandleRangeValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestHandleSolarTerms(t *testing.T) {
+	records := []calendar.CalendarRecord{
+		{Date: "2026-01-05", SolarTerm: "小寒", MonthDisplay: "冬月"},
+		{Date: "2026-01-20", SolarTerm: "大寒", MonthDisplay: "腊月"},
+		{Date: "2026-04-05", SolarTerm: "清明", MonthDisplay: "三月"},
+		{Date: "2026-06-15", SolarTerm: "", MonthDisplay: "五月"},
+	}
+	store := calendar.NewStore("testv", records)
+	h := NewHandler(store)
+
+	req := httptest.NewRequest("GET", "/api/v1/solar-terms?year=2026", nil)
+	w := httptest.NewRecorder()
+	h.HandleSolarTerms(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", w.Code, w.Body.String())
+	}
+
+	var resp map[string]any
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	if resp["year"] != float64(2026) {
+		t.Errorf("year = %v, want 2026", resp["year"])
+	}
+	terms := resp["terms"].([]any)
+	if len(terms) != 3 {
+		t.Fatalf("len(terms) = %d, want 3", len(terms))
+	}
+	first := terms[0].(map[string]any)
+	if first["name"] != "小寒" {
+		t.Errorf("first term name = %v, want 小寒", first["name"])
+	}
+}
+
+func TestHandleSolarTermsValidation(t *testing.T) {
+	store := calendar.NewStore("testv", nil)
+	h := NewHandler(store)
+
+	tests := []struct {
+		url  string
+		code int
+	}{
+		{"/api/v1/solar-terms", http.StatusBadRequest},
+		{"/api/v1/solar-terms?year=abc", http.StatusBadRequest},
+		{"/api/v1/solar-terms?year=1999", http.StatusNotFound},
+	}
+	for _, tt := range tests {
+		req := httptest.NewRequest("GET", tt.url, nil)
+		w := httptest.NewRecorder()
+		h.HandleSolarTerms(w, req)
+		if w.Code != tt.code {
+			t.Errorf("url=%s status=%d, want %d", tt.url, w.Code, tt.code)
+		}
+	}
+}
