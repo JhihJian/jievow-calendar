@@ -25,7 +25,10 @@ func main() {
 	log.Printf("Loaded %d records (version %s)", store.Len(), store.Version())
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /api/v1/date/{date}", api.NewHandler(store))
+	h := api.NewHandler(store)
+	mux.Handle("GET /api/v1/date/{date}", h)
+	mux.HandleFunc("GET /api/v1/range", h.HandleRange)
+	mux.HandleFunc("GET /api/v1/solar-terms", h.HandleSolarTerms)
 
 	handler := api.CORS(mux)
 	log.Fatal(http.ListenAndServe(addr, handler))
