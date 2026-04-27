@@ -24,15 +24,27 @@ type DataFile struct {
 }
 
 type CalendarRecord struct {
-	Date         string `json:"date"`
-	LunarYear    int    `json:"lunar_year"`
-	LunarMonth   int    `json:"lunar_month"`
-	LunarDay     int    `json:"lunar_day"`
-	IsLeapMonth  bool   `json:"is_leap_month"`
-	YearGanzhi   string `json:"year_ganzhi"`
-	MonthGanzhi  string `json:"month_ganzhi"`
-	DayGanzhi    string `json:"day_ganzhi"`
-	SolarTerm    string `json:"solar_term"`
+	Date        string `json:"date"`
+	LunarYear   int    `json:"lunar_year"`
+	LunarMonth  int    `json:"lunar_month"`
+	LunarDay    int    `json:"lunar_day"`
+	IsLeapMonth bool   `json:"is_leap_month"`
+	YearGanzhi  string `json:"year_ganzhi"`
+	MonthGanzhi string `json:"month_ganzhi"`
+	DayGanzhi   string `json:"day_ganzhi"`
+	SolarTerm   string `json:"solar_term"`
+
+	// Lunar display (#2)
+	MonthDisplay string `json:"month_display"`
+	DayDisplay   string `json:"day_display"`
+	Display      string `json:"display"`
+	YearDisplay  string `json:"year_display"`
+
+	// Active solar term (#1)
+	ActiveTerm    string `json:"active_term"`
+	IsTermDay     bool   `json:"is_term_day"`
+	TermStartDate string `json:"term_start_date"`
+	DayInTerm     int    `json:"day_in_term"`
 }
 
 var chineseWeekdays = [...]string{
