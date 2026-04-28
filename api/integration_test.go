@@ -175,3 +175,105 @@ func assertField(t *testing.T, body map[string]any, key, expected string) {
 		t.Errorf("%s want %q got %v", key, expected, body[key])
 	}
 }
+
+func setupTestFlowerServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	store, err := calendar.LoadStore("../data")
+	if err != nil {
+		t.Fatalf("load store: %v", err)
+	}
+	flowerStore, err := calendar.LoadFlowerStore("../data")
+	if err != nil {
+		t.Fatalf("load flower store: %v", err)
+	}
+	mux := http.NewServeMux()
+	h := NewHandler(store, flowerStore)
+	mux.Handle("GET /api/v1/date/{date}", h)
+	mux.HandleFunc("GET /api/v1/flowers", h.HandleFlowers)
+	return httptest.NewServer(CORS(mux))
+}
+
+func TestIntegrationFlowers(t *testing.T) {
+	srv := setupTestFlowerServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/v1/flowers?solar_term=立春&province=浙江")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status want 200 got %d", resp.StatusCode)
+	}
+
+	var body map[string]any
+	json.NewDecoder(resp.Body).Decode(&body)
+	if body["solar_term"] != "立春" {
+		t.Errorf("solar_term want 立春 got %v", body["solar_term"])
+	}
+	if body["province"] != "浙江" {
+		t.Errorf("province want 浙江 got %v", body["province"])
+	}
+	flowers, ok := body["flowers"].([]any)
+	if !ok || len(flowers) == 0 {
+		t.Error("flowers should be a non-empty array")
+	}
+}
+
+func TestIntegrationFlowersDefaultProvince(t *testing.T) {
+	srv := setupTestFlowerServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/v1/flowers?solar_term=雨水")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status want 200 got %d", resp.StatusCode)
+	}
+
+	var body map[string]any
+	json.NewDecoder(resp.Body).Decode(&body)
+	if body["province"] != "北京" {
+		t.Errorf("default province want 北京 got %v", body["province"])
+	}
+}
+
+func TestIntegrationFlowersErrors(t *testing.T) {
+	srv := setupTestFlowerServer(t)
+	defer srv.Close()
+
+	tests := []struct {
+		name       string
+		url        string
+		wantStatus int
+		wantError  string
+	}{
+		{"missing solar_term", srv.URL + "/api/v1/flowers?province=北京", http.StatusBadRequest, "invalid_params"},
+		{"invalid solar_term", srv.URL + "/api/v1/flowers?solar_term=不存在", http.StatusBadRequest, "invalid_solar_term"},
+		{"invalid province", srv.URL + "/api/v1/flowers?solar_term=立春&province=火星", http.StatusNotFound, "province_not_found"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := http.Get(tt.url)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != tt.wantStatus {
+				t.Fatalf("status want %d got %d", tt.wantStatus, resp.StatusCode)
+			}
+
+			var body map[string]any
+			json.NewDecoder(resp.Body).Decode(&body)
+			if body["error"] != tt.wantError {
+				t.Errorf("error want %q got %q", tt.wantError, body["error"])
+			}
+		})
+	}
+}
