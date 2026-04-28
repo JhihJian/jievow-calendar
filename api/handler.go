@@ -10,11 +10,12 @@ import (
 )
 
 type Handler struct {
-	store *calendar.Store
+	store   *calendar.Store
+	flowers *calendar.FlowerStore
 }
 
-func NewHandler(store *calendar.Store) *Handler {
-	return &Handler{store: store}
+func NewHandler(store *calendar.Store, flowers *calendar.FlowerStore) *Handler {
+	return &Handler{store: store, flowers: flowers}
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

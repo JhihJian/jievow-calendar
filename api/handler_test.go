@@ -19,7 +19,7 @@ func newTestStore(t *testing.T) *calendar.Store {
 }
 
 func TestHandlerBasicQuery(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/2026-04-20?fields=basic,lunar,solar_term", nil)
 	r.SetPathValue("date", "2026-04-20")
@@ -61,7 +61,7 @@ func TestHandlerBasicQuery(t *testing.T) {
 }
 
 func TestHandlerNonSolarTermDay(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/2026-04-21", nil)
 	r.SetPathValue("date", "2026-04-21")
@@ -90,7 +90,7 @@ func TestHandlerNonSolarTermDay(t *testing.T) {
 }
 
 func TestHandlerFieldSelection(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/2026-04-20?fields=basic", nil)
 	r.SetPathValue("date", "2026-04-20")
@@ -111,7 +111,7 @@ func TestHandlerFieldSelection(t *testing.T) {
 }
 
 func TestHandlerInvalidDate(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/not-a-date", nil)
 	r.SetPathValue("date", "not-a-date")
@@ -123,7 +123,7 @@ func TestHandlerInvalidDate(t *testing.T) {
 }
 
 func TestHandlerDateOutOfRange(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/2020-01-01", nil)
 	r.SetPathValue("date", "2020-01-01")
@@ -135,7 +135,7 @@ func TestHandlerDateOutOfRange(t *testing.T) {
 }
 
 func TestHandlerInvalidFields(t *testing.T) {
-	h := NewHandler(newTestStore(t))
+	h := NewHandler(newTestStore(t), nil)
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "/api/v1/date/2026-04-20?fields=basic,invalid", nil)
 	r.SetPathValue("date", "2026-04-20")
@@ -152,7 +152,7 @@ func TestHandleRange(t *testing.T) {
 		{Date: "2026-04-05", LunarYear: 2026, LunarMonth: 3, LunarDay: 8, IsLeapMonth: false, YearGanzhi: "丙午", MonthGanzhi: "壬辰", DayGanzhi: "戊寅", SolarTerm: "清明", ActiveTerm: "清明", IsTermDay: true, TermStartDate: "2026-04-05", DayInTerm: 1, MonthDisplay: "三月", DayDisplay: "初八", Display: "三月初八", YearDisplay: "丙午年三月初八"},
 	}
 	store := calendar.NewStore("testv", records)
-	h := NewHandler(store)
+	h := NewHandler(store, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/range?from=2026-04-01&to=2026-04-05&fields=basic,lunar,solar_term", nil)
 	w := httptest.NewRecorder()
@@ -175,7 +175,7 @@ func TestHandleRange(t *testing.T) {
 
 func TestHandleRangeValidation(t *testing.T) {
 	store := calendar.NewStore("testv", nil)
-	h := NewHandler(store)
+	h := NewHandler(store, nil)
 
 	tests := []struct {
 		url  string
@@ -203,7 +203,7 @@ func TestHandleSolarTerms(t *testing.T) {
 		{Date: "2026-06-15", SolarTerm: "", MonthDisplay: "五月"},
 	}
 	store := calendar.NewStore("testv", records)
-	h := NewHandler(store)
+	h := NewHandler(store, nil)
 
 	req := httptest.NewRequest("GET", "/api/v1/solar-terms?year=2026", nil)
 	w := httptest.NewRecorder()
@@ -230,7 +230,7 @@ func TestHandleSolarTerms(t *testing.T) {
 
 func TestHandleSolarTermsValidation(t *testing.T) {
 	store := calendar.NewStore("testv", nil)
-	h := NewHandler(store)
+	h := NewHandler(store, nil)
 
 	tests := []struct {
 		url  string

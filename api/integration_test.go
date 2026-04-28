@@ -16,7 +16,7 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		t.Fatalf("load store: %v", err)
 	}
 	mux := http.NewServeMux()
-	mux.Handle("GET /api/v1/date/{date}", NewHandler(store))
+	mux.Handle("GET /api/v1/date/{date}", NewHandler(store, nil))
 	return httptest.NewServer(CORS(mux))
 }
 

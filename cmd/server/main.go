@@ -25,7 +25,7 @@ func main() {
 	log.Printf("Loaded %d records (version %s)", store.Len(), store.Version())
 
 	mux := http.NewServeMux()
-	h := api.NewHandler(store)
+	h := api.NewHandler(store, nil)
 	mux.Handle("GET /api/v1/date/{date}", h)
 	mux.HandleFunc("GET /api/v1/range", h.HandleRange)
 	mux.HandleFunc("GET /api/v1/solar-terms", h.HandleSolarTerms)
